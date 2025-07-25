@@ -1,0 +1,6 @@
+# Define o comportamento padrão para a maioria dos arquivos de texto
+* text=auto
+
+# Garante que scripts de shell (.sh) tenham sempre o final de linha do Unix (LF)
+# Isso é crucial para a compatibilidade com servidores de deploy (Linux)
+*.sh eol=lf

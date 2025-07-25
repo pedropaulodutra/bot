@@ -1,0 +1,59 @@
+services:
+    # Serviço 1: A Instância do Redis
+    - type: redis
+      name: bot-redis
+      plan: free
+      ipAllowList: [] # Permite acesso dos outros serviços dentro da sua conta
+
+    # Serviço 2: O Serviço Web (Django/Gunicorn)
+    - type: web
+      name: bot-web
+      runtime: python
+      plan: free
+      buildCommand: "./build.sh"
+      startCommand: "gunicorn config.wsgi"
+      envVars:
+          - key: DATABASE_URL
+            fromDatabase:
+                name: bot-database
+                property: connectionString
+          - key: REDIS_URL
+            fromService:
+                type: redis
+                name: bot-redis
+                property: connectionString
+          - key: PYTHON_VERSION
+            value: 3.12.6
+          - key: SECRET_KEY
+            generateValue: true
+
+    # Serviço 3: O Worker em Segundo Plano (Celery)
+    - type: worker
+      name: bot-worker
+      runtime: python
+      plan: free
+      buildCommand: "pip install -r requirements.txt"
+      startCommand: "celery -A config worker -l info -P gevent"
+      envVars:
+          - key: DATABASE_URL
+            fromDatabase:
+                name: bot-database
+                property: connectionString
+          - key: REDIS_URL
+            fromService:
+                type: redis
+                name: bot-redis
+                property: connectionString
+          - key: PYTHON_VERSION
+            value: 3.12.6
+          - key: SECRET_KEY
+            fromService:
+                type: web
+                name: bot-web
+                envVarKey: SECRET_KEY
+
+# Seção separada e correta para o banco de dados
+databases:
+    # O Banco de Dados PostgreSQL
+    - name: bot-database
+      plan: free
