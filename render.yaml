@@ -1,15 +1,10 @@
 services:
-    # Serviço 1: O Banco de Dados PostgreSQL
-    - type: psql
-      name: bot-database
-      plan: free
-
-    # Serviço 2: A Instância do Redis
+    # Serviço 1: A Instância do Redis
     - type: redis
       name: bot-redis
       plan: free
 
-    # Serviço 3: O Serviço Web (Django/Gunicorn)
+    # Serviço 2: O Serviço Web (Django/Gunicorn)
     - type: web
       name: bot-web
       runtime: python
@@ -30,7 +25,7 @@ services:
           - key: SECRET_KEY
             generateValue: true # O Render vai gerar uma chave segura automaticamente
 
-    # Serviço 4: O Worker em Segundo Plano (Celery)
+    # Serviço 3: O Worker em Segundo Plano (Celery)
     - type: worker
       name: bot-worker
       runtime: python
@@ -49,8 +44,13 @@ services:
           - key: PYTHON_VERSION
             value: 3.12.6
           - key: SECRET_KEY
-            # Pega a mesma chave secreta gerada para o serviço web
             fromService:
                 type: web
                 name: bot-web
                 envVarKey: SECRET_KEY
+
+# Seção separada e correta para o banco de dados
+databases:
+    # O Banco de Dados PostgreSQL
+    - name: bot-database
+      plan: free
