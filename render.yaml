@@ -3,13 +3,14 @@ services:
     - type: redis
       name: bot-redis
       plan: free
-      ipAllowList: [] # Permite acesso dos outros serviços dentro da sua conta
+      ipAllowList: []
 
     # Serviço 2: O Serviço Web (Django/Gunicorn)
     - type: web
       name: bot-web
       runtime: python
       plan: free
+      pythonVersion: "3.11.9"
       buildCommand: "./build.sh"
       startCommand: "gunicorn config.wsgi"
       envVars:
@@ -22,16 +23,16 @@ services:
                 type: redis
                 name: bot-redis
                 property: connectionString
-          - key: PYTHON_VERSION
-            value: 3.11.9
           - key: SECRET_KEY
             generateValue: true
+          # A linha PYTHON_VERSION foi REMOVIDA daqui.
 
     # Serviço 3: O Worker em Segundo Plano (Celery)
     - type: worker
       name: bot-worker
       runtime: python
       plan: free
+      pythonVersion: "3.11.9"
       buildCommand: "pip install -r requirements.txt"
       startCommand: "celery -A config worker -l info -P gevent"
       envVars:
@@ -44,8 +45,6 @@ services:
                 type: redis
                 name: bot-redis
                 property: connectionString
-          - key: PYTHON_VERSION
-            value: 3.11.9
           - key: SECRET_KEY
             fromService:
                 type: web
