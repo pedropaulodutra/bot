@@ -45,7 +45,7 @@ services:
                 name: bot-redis
                 property: connectionString
           - key: PYTHON_VERSION
-            value: 3.12.6
+            value: 3.11.9
           - key: SECRET_KEY
             fromService:
                 type: web
