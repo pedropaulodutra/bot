@@ -10,7 +10,7 @@ services:
       name: bot-web
       runtime: python
       plan: free
-      pythonVersion: "3.11.9"
+      # A linha 'pythonVersion' foi REMOVIDA daqui
       buildCommand: "./build.sh"
       startCommand: "gunicorn config.wsgi"
       envVars:
@@ -25,14 +25,13 @@ services:
                 property: connectionString
           - key: SECRET_KEY
             generateValue: true
-          # A linha PYTHON_VERSION foi REMOVIDA daqui.
 
     # Serviço 3: O Worker em Segundo Plano (Celery)
     - type: worker
       name: bot-worker
       runtime: python
       plan: free
-      pythonVersion: "3.11.9"
+      # A linha 'pythonVersion' foi REMOVIDA daqui
       buildCommand: "pip install -r requirements.txt"
       startCommand: "celery -A config worker -l info -P gevent"
       envVars:
