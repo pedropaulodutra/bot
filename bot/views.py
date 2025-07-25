@@ -12,6 +12,9 @@ from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from .models import BotControl, UserProfile, Trade
 from .tasks import trading_bot_task
+from django.http import HttpResponse
+from django.contrib.auth.models import User
+import os
 
 @login_required
 def dashboard(request):
@@ -130,3 +133,24 @@ def dashboard(request):
         'kpis': context_data['kpis']
     }
     return render(request, 'bot/dashboard.html', context)
+
+
+def create_superuser_temp_view(request):
+    # Pega as credenciais das variáveis de ambiente que configuramos
+    username = os.environ.get('ADMIN_USER')
+    password = os.environ.get('ADMIN_PASS')
+
+    # Verifica se as variáveis foram configuradas
+    if not username or not password:
+        return HttpResponse("Variáveis de ambiente ADMIN_USER e ADMIN_PASS não configuradas no servidor.", status=500)
+
+    # Verifica se um superusuário já existe para não criar de novo
+    if User.objects.filter(is_superuser=True).exists():
+        return HttpResponse("Um superusuário já existe. Por segurança, esta URL foi desativada.", status=403)
+
+    # Tenta criar o superusuário
+    try:
+        User.objects.create_superuser(username=username, password=password, email='')
+        return HttpResponse("<h1>Superusuário criado com sucesso!</h1><p>Agora você pode fazer login em /admin. Lembre-se de remover esta URL do seu código por segurança.</p>")
+    except Exception as e:
+        return HttpResponse(f"Erro ao criar superusuário: {e}", status=500)
