@@ -23,9 +23,15 @@ DEBUG = not IS_PRODUCTION
 # Hosts permitidos. Em produção, usa o domínio fornecido pela Railway.
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 if IS_PRODUCTION:
+    # Tenta pegar o domínio dinamicamente da Railway
     RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
     if RAILWAY_PUBLIC_DOMAIN:
         ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+    
+    # ADICIONADO: Adiciona sua URL específica como garantia.
+    # Esta é a correção para o erro que você está vendo.
+    ALLOWED_HOSTS.append('web-production-fafd7.up.railway.app')
+
 
 # --- APLICAÇÕES E MIDDLEWARE ---
 
@@ -116,7 +122,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 # --- CELERY (lendo a URL do Redis do ambiente) ---
 
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6-9/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
