@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ block.super }}{% endblock %}
+
+{% block content %}
+    <hgroup>
+        <h1>Dashboard de Performance</h1>
+        <h2>Monitore a estratégia e os resultados do seu bot em tempo real.</h2>
+    </hgroup>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <article class="{{ message.tags }}" style="padding: 1rem; margin-bottom: 1rem; border-left-width: .5rem;">
+            {{ message }}
+        </article>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <article>
+        <div class="grid">
+            <div style="text-align: center;">
+                <hgroup>
+                    <h4>Total PnL</h4>
+                    <h2 style="color: {% if kpis.total_pnl > 0 %}var(--pico-color-green-500){% else %}var(--pico-color-red-500){% endif %}; margin: 0;">
+                        ${{ kpis.total_pnl }}
+                    </h2>
+                </hgroup>
+            </div>
+            <div style="text-align: center;">
+                <hgroup>
+                    <h4>Win Rate</h4>
+                    <h2 style="margin: 0;">{{ kpis.win_rate }}%</h2>
+                </hgroup>
+            </div>
+            <div style="text-align: center;">
+                <hgroup>
+                    <h4>Total de Trades Fechados</h4>
+                    <h2 style="margin: 0;">{{ kpis.total_trades }}</h2>
+                </hgroup>
+            </div>
+        </div>
+    </article>
+
+    <div class="grid">
+        <article>
+            <header><h6>Curva de Capital (Equity Curve)</h6></header>
+            <canvas id="equityCurveChart"></canvas>
+        </article>
+        <article>
+            <header><h6>Resultado por Trade (PnL)</h6></header>
+            <canvas id="pnlPerTradeChart"></canvas>
+        </article>
+    </div>
+    
+    <div class="grid">
+        <article>
+            <header>
+                <hgroup>
+                    <h3>Controle e Configurações</h3>
+                    <p>Status: <strong style="color: {% if control.is_running %}var(--pico-color-green-500){% else %}var(--pico-color-red-500){% endif %};">{% if control.is_running %}RODANDO{% else %}PARADO{% endif %}</strong></p>
+                </hgroup>
+            </header>
+            <form method="post">
+                {% csrf_token %}
+                <fieldset {% if control.is_running %}disabled{% endif %}>
+                    <label>Símbolo
+                        <input type="text" name="symbol" value="{{ control.symbol }}">
+                    </label>
+                    <div class="grid">
+                        <label>Timeframe
+                            <input type="text" name="timeframe" value="{{ control.timeframe }}">
+                        </label>
+                        <label>Valor (USDT)
+                            <input type="number" step="0.01" name="quantidade_usdt" value="{{ control.quantidade_usdt }}">
+                        </label>
+                    </div>
+                    <div class="grid">
+                        <label>Alavancagem
+                            <input type="number" name="leverage" value="{{ control.leverage }}">
+                        </label>
+                        <label>EMA Rápida
+                            <input type="number" name="ema_fast" value="{{ control.ema_fast }}">
+                        </label>
+                        <label>EMA Lenta
+                            <input type="number" name="ema_slow" value="{{ control.ema_slow }}">
+                        </label>
+                    </div>
+                    <button type="submit" name="save_settings">Salvar Configurações</button>
+                </fieldset>
+            </form>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" name="toggle_bot" class="contrast">
+                    {% if control.is_running %}Parar Bot{% else %}Ligar Bot{% endif %}
+                </button>
+            </form>
+        </article>
+        <article>
+            <header><h3>Ordem Manual</h3></header>
+            <form method="post">
+                {% csrf_token %}
+                <label>Símbolo
+                    <input type="text" name="symbol_manual" required>
+                </label>
+                <div class="grid">
+                    <label>Operação
+                        <select name="side_manual">
+                            <option value="BUY">Long</option>
+                            <option value="SELL">Short</option>
+                        </select>
+                    </label>
+                    <label>Alavancagem
+                        <input type="number" name="leverage_manual" value="1" min="1" max="125" required>
+                    </label>
+                </div>
+                <label>Quantidade
+                    <input type="text" name="quantity_manual" required>
+                </label>
+                <button type="submit" name="manual_trade" class="secondary">Enviar Ordem</button>
+            </form>
+        </article>
+    </div>
+    
+    <article>
+        <header><h2>Dados da Conta</h2></header>
+        {% if error_message %}
+            <p style="color: var(--pico-color-red-500);">{{ error_message }}</p>
+        {% else %}
+            <div class="grid">
+                <div>
+                    <h6>Posições Abertas</h6>
+                    <figure>
+                        <table role="grid">
+                            <thead><tr><th>Símbolo</th><th>Qtd.</th><th>Preço Entrada</th><th>PnL</th></tr></thead>
+                            <tbody>
+                                {% for pos in positions %}
+                                <tr>
+                                    <td>{{ pos.symbol }}</td>
+                                    <td>{{ pos.positionAmt }}</td>
+                                    <td>{{ pos.entryPrice|floatformat:2 }}</td>
+                                    <td style="color: {% if pos.unrealizedProfit|slice:':1' == '-' %}var(--pico-color-red-500){% else %}var(--pico-color-green-500){% endif %};">
+                                        {{ pos.unrealizedProfit|floatformat:2 }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" style="text-align: center;">Nenhuma posição aberta.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </figure>
+                </div>
+                <div>
+                    <h6>Saldos da Carteira</h6>
+                    <figure>
+                        <table role="grid">
+                            <thead><tr><th>Ativo</th><th>Saldo Total</th></tr></thead>
+                            <tbody>
+                                {% for balance in balances %}
+                                <tr>
+                                    <td>{{ balance.asset }}</td>
+                                    <td>{{ balance.balance|floatformat:4 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" style="text-align: center;">Nenhum saldo encontrado.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </figure>
+                </div>
+            </div>
+        {% endif %}
+    </article>
+{% endblock %}
+
+
+{% block scripts %}
+    <script>
+        if ('{{ chart_data_json|safe }}' && '{{ chart_data_json|safe }}' !== '[]') {
+            // ... (código do gráfico TradingView que já tínhamos)
+        }
+    </script>
+
+    <script>
+        const perfData = JSON.parse('{{ performance_data_json|safe }}');
+        
+        // Só renderiza os gráficos de performance se houver dados
+        if (perfData && perfData.total_trades > 0) {
+            const getThemeColors = () => {
+                const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+                return {
+                    textColor: isDarkMode ? '#d1d4dc' : '#546e7a',
+                    gridColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                };
+            };
+            
+            // Gráfico de Curva de Capital
+            const equityCtx = document.getElementById('equityCurveChart');
+            new Chart(equityCtx, {
+                type: 'line',
+                data: {
+                    labels: perfData.equity_curve_labels,
+                    datasets: [{
+                        label: 'PnL Acumulado (USDT)',
+                        data: perfData.equity_curve_data,
+                        borderColor: 'rgb(54, 162, 235)',
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: { scales: { x: { ticks: { color: getThemeColors().textColor } }, y: { ticks: { color: getThemeColors().textColor } } } }
+            });
+
+            // Gráfico de PnL por Trade
+            const pnlCtx = document.getElementById('pnlPerTradeChart');
+            new Chart(pnlCtx, {
+                type: 'bar',
+                data: {
+                    labels: perfData.pnl_por_trade_labels,
+                    datasets: [{
+                        label: 'PnL do Trade (USDT)',
+                        data: perfData.pnl_por_trade_data,
+                        backgroundColor: perfData.pnl_por_trade_data.map(pnl => pnl >= 0 ? 'rgba(38, 166, 154, 0.6)' : 'rgba(239, 83, 80, 0.6)')
+                    }]
+                },
+                options: { scales: { x: { ticks: { color: getThemeColors().textColor } }, y: { ticks: { color: getThemeColors().textColor } } } }
+            });
+        }
+    </script>
+{% endblock %}

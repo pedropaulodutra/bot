@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <title>{% block title %}Bot de Trading{% endblock %}</title>
+</head>
+<body>
+    <main class="container">
+        <nav>
+            <nav>
+                <ul>
+                    <li><strong>TradingBot</strong></li>
+                </ul>
+                <ul>
+                    <li>
+                        <a href="#" data-theme-switcher="auto">🌓</a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li>Olá, {{ user.username }}</li>
+                    <li><a href="{% url 'login' %}" role="button" class="secondary">Sair</a></li>
+                    {% else %}
+                    <li><a href="{% url 'login' %}" role="button">Login</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </nav>
+
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+    {% block scripts %}
+    <script>
+        /**
+         * Script para alternar entre os temas Light e Dark do Pico.css
+         * e salvar a preferência do usuário no localStorage.
+         */
+        (() => {
+            const themeSwitcher = document.querySelector("a[data-theme-switcher]");
+            const htmlElement = document.documentElement;
+            let isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+            // Função para aplicar o tema
+            const applyTheme = (theme) => {
+                htmlElement.setAttribute("data-theme", theme);
+                localStorage.setItem("theme", theme);
+            };
+
+            // Aplica o tema salvo ou o do sistema ao carregar a página
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            } else if (isDark) {
+                applyTheme("dark");
+            } else {
+                applyTheme("light");
+            }
+
+            // Evento de clique no botão
+            themeSwitcher.addEventListener("click", (event) => {
+                event.preventDefault();
+                const currentTheme = htmlElement.getAttribute("data-theme");
+                const newTheme = currentTheme === "dark" ? "light" : "dark";
+                applyTheme(newTheme);
+            }, false);
+        })();
+    </script>
+    {% endblock %}
+</body>
+</html>
