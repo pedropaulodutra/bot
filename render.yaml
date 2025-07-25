@@ -3,6 +3,7 @@ services:
     - type: redis
       name: bot-redis
       plan: free
+      ipAllowList: [] # CORREÇÃO 1: Adicionada lista de permissões de IP (vazia permite acesso interno)
 
     # Serviço 2: O Serviço Web (Django/Gunicorn)
     - type: web
@@ -17,13 +18,14 @@ services:
                 name: bot-database
                 property: connectionString
           - key: REDIS_URL
-            fromRedis:
+            fromService: # CORREÇÃO 2: 'fromRedis' trocado para 'fromService'
+                type: redis # CORREÇÃO 2: Adicionado o tipo de serviço
                 name: bot-redis
                 property: connectionString
           - key: PYTHON_VERSION
             value: 3.12.6
           - key: SECRET_KEY
-            generateValue: true # O Render vai gerar uma chave segura automaticamente
+            generateValue: true
 
     # Serviço 3: O Worker em Segundo Plano (Celery)
     - type: worker
@@ -38,7 +40,8 @@ services:
                 name: bot-database
                 property: connectionString
           - key: REDIS_URL
-            fromRedis:
+            fromService: # CORREÇÃO 3: 'fromRedis' trocado para 'fromService'
+                type: redis # CORREÇÃO 3: Adicionado o tipo de serviço
                 name: bot-redis
                 property: connectionString
           - key: PYTHON_VERSION
